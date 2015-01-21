@@ -16,7 +16,7 @@ namespace RsaBackdoor.Backdoor
 {
 	class BackdoorEngine
 	{
-		private const string MY_PUBLIC_STR = "CE75B4DDD279D5F8009B454FA0F025861B65EBFBE2ADA0823E9D5F6C3A15CF58";
+        private const string MY_PUBLIC_STR = "06F1A4EDF328C5E44AD32D5AA33FB7EF10B9A0FEE3AC1D3BA8E2FACD97643A43";
 		private static readonly byte[] MY_PUBLIC = StringToByteArray(MY_PUBLIC_STR);
 
 		public static byte[] StringToByteArray(string hex)
