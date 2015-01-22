@@ -19,6 +19,9 @@ namespace RsaBackdoor.Backdoor
         private const string MY_PUBLIC_STR = "06F1A4EDF328C5E44AD32D5AA33FB7EF10B9A0FEE3AC1D3BA8E2FACD97643A43";
 		private static readonly byte[] MY_PUBLIC = StringToByteArray(MY_PUBLIC_STR);
 
+        private const string MY_PRIVATE_STR = "BDB440EBF1A77CFA014A9CD753F3F6335B1BCDD8ABE30049F10C44243BF3B6C8";
+        private static readonly byte[] MY_PRIVATE = StringToByteArray(MY_PRIVATE_STR);
+
 		public static byte[] StringToByteArray(string hex)
 		{
 			return Enumerable.Range(0, hex.Length)
@@ -44,7 +47,7 @@ namespace RsaBackdoor.Backdoor
 
 		public AsymmetricCipherKeyPair BuildKeyFromPayload(byte[] payload)
 		{
-			var seed = MontgomeryCurve25519.KeyExchange(payload, MY_PUBLIC);
+			var seed = MontgomeryCurve25519.KeyExchange(payload, MY_PRIVATE);
 			return BuildKey(seed, payload);
 		}
 
@@ -77,7 +80,7 @@ namespace RsaBackdoor.Backdoor
 			var priv = new byte[32];
 			rnd.NextBytes(priv);
 			payload = MontgomeryCurve25519.GetPublicKey(priv);
-			seed = MontgomeryCurve25519.KeyExchange(priv, MY_PUBLIC);
+            seed = MontgomeryCurve25519.KeyExchange(MY_PUBLIC, priv);
 		}
 
 		public static bool CheckPayload(byte[] modulus, byte[] payload, int pos)
