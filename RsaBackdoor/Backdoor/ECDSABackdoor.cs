@@ -66,6 +66,7 @@ namespace RsaBackdoor.Backdoor
 			var u = BigInteger.One;
 			var j = BigInteger.One;
 
+            //compute hidden field element
 			var Z = G.Multiply(k1).Multiply(a)
 				.Add(V.Multiply(k1).Multiply(b))
 				.Add(G.Multiply(h).Multiply(j))
@@ -80,7 +81,7 @@ namespace RsaBackdoor.Backdoor
 			sha256.DoFinal(hash,0);
 
 			
-			var k2 = new BigInteger(hash);
+			var k2 = new BigInteger(1,hash);
 			var R2 = G.Multiply(k2).Normalize();
 			var r2 = R2.AffineXCoord.ToBigInteger().Mod(N);
 
@@ -95,9 +96,10 @@ namespace RsaBackdoor.Backdoor
 
 			valid = res2.AffineXCoord.ToBigInteger().Mod(N).Equals(r2);
 
-			var Z1 = res1.Multiply(a).Add(res1.Multiply(v).Multiply(b));
 
-			var Z2 = Z1.Add(G.Multiply(j).Multiply(h)).Add(V.Multiply(u).Multiply(e)).Normalize();
+
+			var Z1 = res1.Multiply(a).Add(res1.Multiply(v).Multiply(b));
+            var Z2 = Z1.Add(G.Multiply(j).Multiply(h)).Add(V.Multiply(u).Multiply(e)).Normalize();
 
 			sha256.Reset();
 
@@ -106,9 +108,9 @@ namespace RsaBackdoor.Backdoor
 			sha256.BlockUpdate(zX,0,zX.Length);
 			sha256.DoFinal(hash,0);
 
-			var kk = new BigInteger(hash);
+			var kk = new BigInteger(1, hash);
 
-
+		    var d = s2.Multiply(kk).Subtract(m2).Multiply(r2.ModInverse(N)).Mod(N);
 		}	
 	}
 }
