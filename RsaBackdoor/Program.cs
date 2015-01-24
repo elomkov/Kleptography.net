@@ -16,9 +16,6 @@ namespace RsaBackdoor
 		{
 			new ECDSABackdoor().Backdoor();
 
-
-			/*new DsaBackdoor().GenerateSignature();
-
 			var backdoorEngine = new RsaBackdoorEngine();
 			var randomKeyPair = backdoorEngine.BuildRandomKey();
 
@@ -28,8 +25,8 @@ namespace RsaBackdoor
 
 			var initialParams = ((RsaPrivateCrtKeyParameters)randomKeyPair.Private);
 			var restoredParams = ((RsaPrivateCrtKeyParameters)restoredKey.Private);
-			Console.WriteLine(initialParams.P.Equals(restoredParams.P) && initialParams.Q.Equals(restoredParams.Q));
-			Console.ReadKey();*/
+			Console.WriteLine("RSA private key restored: {0}", initialParams.P.Equals(restoredParams.P) && initialParams.Q.Equals(restoredParams.Q));
+			Console.ReadKey();
 		}
 	}
 }

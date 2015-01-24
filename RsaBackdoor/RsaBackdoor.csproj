@@ -54,7 +54,6 @@
   <ItemGroup>
     <Compile Include="Backdoor\ECDSABackdoor.cs" />
     <Compile Include="Backdoor\RSABackdoorEngine.cs" />
-    <Compile Include="Backdoor\DSABackdoor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Backdoor\SeededGenerator.cs" />
