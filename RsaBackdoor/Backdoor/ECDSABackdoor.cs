@@ -35,36 +35,33 @@ namespace RsaBackdoor.Backdoor
 
 			var usersKeyPair = gen.GenerateKeyPair(); //user's public
 			var D = ((ECPrivateKeyParameters)usersKeyPair.Private).D; //user's private
+            var Q = ((ECPublicKeyParameters)usersKeyPair.Public).Q;//user's public
 
 
-		    var message1 = "First message to sign";
-            var message2 = "Second message to sign";
+            const string message1 = "First message to sign";
+            var m1 = new BigInteger(1, Hash(Encoding.UTF8.GetBytes(message1))); // hash of m1
 
-
-
-			var m1 = new BigInteger(1, Hash(Encoding.UTF8.GetBytes(message1))); // hash of m1
-            var m2 = new BigInteger(1, Hash(Encoding.UTF8.GetBytes(message2))); // hash of m2
-
-			var k1 = kCalc.NextK(); // k1 is random
-			var R1 = G.Multiply(k1).Normalize();
+            //Generate signature 1
+			var k1 = kCalc.NextK(); // k1 is true random
+			var signaturePoint1 = G.Multiply(k1).Normalize();
 
 			//(r1, s1) - signature 1
-			var r1 = R1.AffineXCoord.ToBigInteger().Mod(N);
+			var r1 = signaturePoint1.AffineXCoord.ToBigInteger().Mod(N);
 			var s1 = k1.ModInverse(N).Multiply(m1.Add(D.Multiply(r1)));
 
 
 			//verify signature 1
-			var s = s1.ModInverse(N);
-			var tmp = m1.Multiply(s).Mod(N);
-			var tmp1 = r1.Multiply(s).Mod(N);
-			var Q = ((ECPublicKeyParameters) usersKeyPair.Public).Q;
-			var res1 = ECAlgorithms.SumOfTwoMultiplies(G, tmp, Q, tmp1).Normalize();
+			var w = s1.ModInverse(N);
+			var u1 = m1.Multiply(w).Mod(N);
+			var u2 = r1.Multiply(w).Mod(N);
+			var verifyPoint1 = ECAlgorithms.SumOfTwoMultiplies(G, u1, Q, u2).Normalize();
 
-			bool valid1 = res1.AffineXCoord.ToBigInteger().Mod(N).Equals(r1);
+			var valid1 = verifyPoint1.AffineXCoord.ToBigInteger().Mod(N).Equals(r1);
 
 
             //Generate signature 2
-
+            const string message2 = "Second message to sign";
+            var m2 = new BigInteger(1, Hash(Encoding.UTF8.GetBytes(message2))); // hash of m2
 
             //here we generate a,b,h,e < N using seed = hash(m2)
             kCalc.Init(N, new SecureRandom(new SeededGenerator(Hash(Encoding.UTF8.GetBytes(message2)))));
@@ -89,25 +86,25 @@ namespace RsaBackdoor.Backdoor
 
 		    var hash = Hash(zX);
             var k2 = new BigInteger(1,hash);
-			var R2 = G.Multiply(k2).Normalize();
+			var signaturePoint2 = G.Multiply(k2).Normalize();
 
             //(r2, s2) = signature 2
-			var r2 = R2.AffineXCoord.ToBigInteger().Mod(N);
+			var r2 = signaturePoint2.AffineXCoord.ToBigInteger().Mod(N);
             var s2 = k2.ModInverse(N).Multiply(m2.Add(D.Multiply(r2)));
 
 			//verify signature 2
 
-			s = s2.ModInverse(N);
-			tmp = m2.Multiply(s).Mod(N);
-			tmp1 = r2.Multiply(s).Mod(N);
-			var res2 = ECAlgorithms.SumOfTwoMultiplies(G, tmp, Q, tmp1).Normalize();
+			w = s2.ModInverse(N);
+			u1 = m2.Multiply(w).Mod(N);
+			u2 = r2.Multiply(w).Mod(N);
+			var verifyPoint2 = ECAlgorithms.SumOfTwoMultiplies(G, u1, Q, u2).Normalize();
 
-			var valid2 = res2.AffineXCoord.ToBigInteger().Mod(N).Equals(r2);
+			var valid2 = verifyPoint2.AffineXCoord.ToBigInteger().Mod(N).Equals(r2);
 
 		    if (valid1 && valid2)
             {
                 //compute user's private key
-                var d = GetUsersPrivateKey(G, N, message2, m1, m2, r1, s1, r2, s2, v, V, Q);
+                var d = ExtractUsersPrivateKey(G, N, message1, message2, r1, s1, r2, s2, v, V, Q);
                 Console.WriteLine("Ecdsa private key restored: {0}",d.Equals(D));    
 		    }
 		    else
@@ -125,20 +122,23 @@ namespace RsaBackdoor.Backdoor
 	        return hash;
 	    }
 
-	    private BigInteger GetUsersPrivateKey(
+	    private BigInteger ExtractUsersPrivateKey(
             ECPoint G, BigInteger N,
+            string message1,
             string message2,
-            BigInteger m1, BigInteger m2,
             BigInteger r1, BigInteger s1,
             BigInteger r2, BigInteger s2,
-            BigInteger v, ECPoint V,
-            ECPoint Q)
+            BigInteger attackersPrivate, ECPoint attackersPublic,
+            ECPoint usersPublic)
 	    {
+            var m1 = new BigInteger(1, Hash(Encoding.UTF8.GetBytes(message1))); // hash of m1
+            var m2 = new BigInteger(1, Hash(Encoding.UTF8.GetBytes(message2))); // hash of m2
+
             //calculate the result of verifying signature 1
-            var s = s1.ModInverse(N);
-            var tmp = m1.Multiply(s).Mod(N);
-            var tmp1 = r1.Multiply(s).Mod(N);
-            var res1 = ECAlgorithms.SumOfTwoMultiplies(G, tmp, Q, tmp1).Normalize();
+            var w = s1.ModInverse(N);
+            var u1 = m1.Multiply(w).Mod(N);
+            var u2 = r1.Multiply(w).Mod(N);
+            var verifyPoint = ECAlgorithms.SumOfTwoMultiplies(G, u1, usersPublic, u2).Normalize();
 
             //reinit K calculator to reproduce a,b,h,e
 	        var kCalc = new RandomDsaKCalculator();
@@ -149,7 +149,7 @@ namespace RsaBackdoor.Backdoor
             var h = kCalc.NextK();
             var e = kCalc.NextK();
 
-            var Z1 = res1.Multiply(a).Add(res1.Multiply(v).Multiply(b));
+            var Z1 = verifyPoint.Multiply(a).Add(verifyPoint.Multiply(attackersPrivate).Multiply(b));
 
             //cycle through all possible j & u
             for(int i = 0; i<2; i++)
@@ -159,16 +159,16 @@ namespace RsaBackdoor.Backdoor
                     var u = new BigInteger(l.ToString());
 
 
-                    var Z2 = Z1.Add(G.Multiply(j).Multiply(h)).Add(V.Multiply(u).Multiply(e)).Normalize();
+                    var Z2 = Z1.Add(G.Multiply(j).Multiply(h)).Add(attackersPublic.Multiply(u).Multiply(e)).Normalize();
                     var zX = Z2.AffineXCoord.ToBigInteger().ToByteArray();
                     var hash = Hash(zX);
-                    var kk = new BigInteger(1, hash);
-                    var R2 = G.Multiply(kk).Normalize();
-                    var rr = R2.AffineXCoord.ToBigInteger().Mod(N);
+                    var kCandidate = new BigInteger(1, hash);
+                    var verifyPointCandidate = G.Multiply(kCandidate).Normalize();
+                    var rCandidate = verifyPointCandidate.AffineXCoord.ToBigInteger().Mod(N);
 
-                    if (rr.Equals(r2)) // Gotcha!
+                    if (rCandidate.Equals(r2)) // Gotcha!
                     {
-                       return  s2.Multiply(kk).Subtract(m2).Multiply(r2.ModInverse(N)).Mod(N);
+                       return  s2.Multiply(kCandidate).Subtract(m2).Multiply(r2.ModInverse(N)).Mod(N);
                     }
                 }
 
