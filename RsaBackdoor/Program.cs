@@ -17,6 +17,8 @@ namespace RsaBackdoor
 
 			new DsaBackdoor().GenerateSignature();
 
+            new DsaBackdoor().GenerateSignature();
+
 			var backdoorEngine = new RsaBackdoorEngine();
 			var randomKeyPair = backdoorEngine.BuildRandomKey();
 

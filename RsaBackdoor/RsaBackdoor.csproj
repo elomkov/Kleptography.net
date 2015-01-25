@@ -52,6 +52,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+<<<<<<< origin/DSABackdoor:RsaBackdoor/RsaBackdoor.csproj
+=======
+    <Compile Include="Backdoor\DSABackdoor.cs" />
+    <Compile Include="Backdoor\ECDSABackdoor.cs" />
+>>>>>>> local:RsaBackdoor/Kleptography.csproj
     <Compile Include="Backdoor\RSABackdoorEngine.cs" />
     <Compile Include="Backdoor\DSABackdoor.cs" />
     <Compile Include="Program.cs" />
